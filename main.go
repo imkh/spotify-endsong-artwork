@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -81,13 +80,19 @@ func prettyPrint(i interface{}) {
 func readEndsongFiles() []Stream {
 	var allStreams []Stream
 
-	fileIndex := 0
-	for {
-		var fileStreams []Stream
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		log.Fatal("Error while reading directory", err)
+	}
 
-		fileName := fmt.Sprintf("endsong_%d.json", fileIndex)
-		if _, err := os.Stat(fileName); err == nil {
-			// fileName exists
+	for _, f := range files {
+		fileName := f.Name()
+		if !strings.HasSuffix(fileName, ".json") {
+			continue
+		}
+
+		if strings.HasPrefix(fileName, "endsong_") || strings.HasPrefix(fileName, "Streaming_History_Audio_") {
+			var fileStreams []Stream
 
 			content, err := ioutil.ReadFile(fileName)
 			if err != nil {
@@ -102,17 +107,6 @@ func readEndsongFiles() []Stream {
 			allStreams = append(allStreams, fileStreams...)
 
 			fmt.Printf("%s done!\n", fileName)
-			fileIndex++
-		} else if errors.Is(err, os.ErrNotExist) {
-			// fileName does *not* exist
-			if fileIndex == 0 {
-				log.Fatal("No endsong_0.json file found")
-			}
-			break
-		} else {
-			// Schrodinger: file may or may not exist. See err for details.
-			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
-			log.Fatal("Error when opening file: ", err)
 		}
 	}
 
@@ -140,7 +134,7 @@ func addStreamArtworks(allStreams []Stream) []Stream {
 	for i := 0; i < len(allStreams); i++ {
 		splitTrackURI := strings.Split(allStreams[i].SpotifyTrackURI, ":")
 		if splitTrackURI[0] != "spotify" || splitTrackURI[1] != "track" || len(splitTrackURI) < 3 {
-			log.Printf("SpotifyTrackURI = %q | ts = %q | %q by %q\n", allStreams[i].SpotifyTrackURI, allStreams[i].Ts.Format(time.RFC3339), allStreams[i].MasterMetadataTrackName, allStreams[i].MasterMetadataAlbumArtistName)
+			// log.Printf("SpotifyTrackURI = %q | ts = %q | %q by %q\n", allStreams[i].SpotifyTrackURI, allStreams[i].Ts.Format(time.RFC3339), allStreams[i].MasterMetadataTrackName, allStreams[i].MasterMetadataAlbumArtistName)
 			continue
 		}
 

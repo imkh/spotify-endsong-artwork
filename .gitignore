@@ -2,3 +2,4 @@
 endsong_*.json
 sorted_streams.json
 sorted_streams_ndjson.json
+Streaming_History_Audio_*.json
